@@ -1,0 +1,100 @@
+---
+title: "Peer Assessment 1 - RepData"
+output: html_document
+---
+
+Loading and reading data:
+```{r}
+setwd("C:/Users/om/Desktop/Coursera/RepData/Peer Assessment 1")
+act <- read.csv("activity.csv")
+```
+
+###Total number of steps taken per day
+```{r}
+totalsteps <- tapply(act$steps, act$date, sum, na.rm = TRUE)
+totalsteps
+```
+
+Representing the frequency of total steps in a day:
+```{r}
+hist(totalsteps, main = "Frequency of total number of steps taken each day", xlab = "Total Number of steps each day", ylab = "Number of days")
+```
+
+Mean of total steps taken per day:
+```{r}
+mean(totalsteps, na.rm = TRUE)
+```
+
+Median of total steps taken per day:
+```{r}
+median(totalsteps, na.rm = TRUE)
+```
+
+###Average daily activity pattern
+```{r}
+act <- data.frame(act$steps, act$date, as.factor(act$interval))
+colnames(act) <- c("steps", "date", "interval")
+steps_interval <- tapply(act$steps, act$interval, mean, na.rm = TRUE)
+plot(act$interval[1:288], steps_interval, type = "l", main = "Average Number of steps taken across all days", xlab = "Time Interval", ylab = "Average number of steps")
+```
+
+Time interval in which maximum number of steps were taken:
+```{r}
+act$interval[which(steps_interval == max(steps_interval))]
+```
+
+###Imputing missing values
+Total number of missing values in the dataset:
+```{r}
+nrow(act[!complete.cases(act),])
+```
+
+Creating new dataset with missing values:
+```{r}
+steps_interval <- rep_len(steps_interval, length.out = nrow(act))
+act2 <- act
+for(i in 1:nrow(act2)){
+  if(is.na(act2$steps[i])){
+    act2$steps[i] = steps_interval[i]
+  }
+}
+head(act2)
+```
+
+Representing the frequency of total steps in a day for the new dataset:
+```{r}
+totalsteps2 <- tapply(act2$steps, act2$date, sum, na.rm = TRUE)
+hist(totalsteps2, main = "Frequency of total number of steps taken each day", xlab = "Total Number of steps each day", ylab = "Number of days")
+```
+
+Mean of total steps taken per day:
+```{r}
+mean(totalsteps2, na.rm = TRUE)
+```
+
+Median of total steps taken per day:
+```{r}
+median(totalsteps2, na.rm = TRUE)
+```
+After imputing the missing values in the dataset the mean and median of the data has increased. This would have been because the overall entered values were greater than the previous mean.
+
+###Activity patterns between weekdays and weekends
+Creating a new variable with two levels - 'weekdays' and 'weekends'
+```{r}
+library(lubridate)
+act2$day <- factor(wday(act2$date) > 1 & wday(act2$date) < 7)
+levels(act2$day)[levels(act2$day) == "TRUE"] <- "weekday"
+levels(act2$day)[levels(act2$day) == "FALSE"] <- "weekend"
+head(act2)
+```
+
+Average steps trend during weekdays and weekends:
+```{r}
+steps_intervalnew <- tapply(act2$steps, list(act2$interval, act2$day), mean, na.rm = TRUE)
+par(mfcol = c(2,1), mar = c(4,7,1,2))
+plot(act2$interval[1:288], steps_intervalnew[,1], type = "l", xlab = "Interval", ylab = "Number of steps")
+legend("topright", "Weekdays")
+title(main = "Average number of Steps per day", cex.main = 1)
+plot(act2$interval[1:288], steps_intervalnew[,2], type = "l", xlab = "Interval", ylab = "Number of steps")
+legend("topright", "Weekends")
+```
